@@ -25,6 +25,7 @@ endif()
 
 if(${enable_nodejs_binding})
     add_subdirectory(nodejs_simple_sample)
+    add_subdirectory(nodejs_real_device_sample)
 endif()
 
 if (${enable_native_remote_modules})
