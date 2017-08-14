@@ -63,6 +63,10 @@
             "source": "node_sensor",
             "sink": "iothub_writer"
         },
+	{
+		"source": "iothub_writer",
+		"sink": "node_sensor"
+	},
         {
             "source": "node_sensor",
             "sink": "node_printer"

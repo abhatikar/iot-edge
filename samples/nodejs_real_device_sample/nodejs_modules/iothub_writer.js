@@ -19,6 +19,7 @@ class IotHubWriterModule
             this.connected = true;
             this.iothub_client.on('error', this.on_error.bind(this));
             this.iothub_client.on('disconnect', this.on_disconnect.bind(this));
+            this.iothub_client.on('message', this.on_message.bind(this));
         }
     }
 
@@ -29,6 +30,23 @@ class IotHubWriterModule
     on_disconnect() {
         console.log('Got disconnected from Azure IoT Hub.');
         this.connected = false;
+    }
+
+    on_message(msg) {
+	    console.log('Id: ' + msg.messageId + ' Body: ' + msg.data);
+	    this.iothub_client.complete(msg, () => {
+			    console.log('Done');
+	    });
+	    var parsedData = JSON.parse(msg.data);
+	    //var parsedData = JSON.parse("{\"Frequency\" : \"2000\"}");
+	    this.broker.publish({
+		properties: {
+			'source': 'iothubwriter'
+		},
+		content: new Uint8Array(
+			Buffer.from(JSON.stringify(parsedData), 'utf8')
+			)
+		});
     }
 
     create(broker, configuration) {
@@ -49,21 +67,20 @@ class IotHubWriterModule
     }
 
     receive(message) {
-        if(this.connected) {
-            var m = new Message(JSON.stringify(message.content));
-            if(message.properties) {
-                for(var prop in message.properties) {
-                    m.properties.add(prop, message.properties[prop]);
-                }
-            }
-
-            this.iothub_client.sendEvent(m, err => {
-                if(err) {
-                    console.error(`An error occurred when sending message to Azure IoT Hub: ${err.toString()}`);
-                }
-            });
-        }
-    }
+	    if(this.connected) {
+		    var m = new Message(JSON.stringify(message.content));
+		    if(message.properties) {
+			    for(var prop in message.properties) {
+				    m.properties.add(prop, message.properties[prop]);
+			    }
+		    }
+		    this.iothub_client.sendEvent(m, err => {
+			    if(err) {
+				    console.error(`An error occurred when sending message to Azure IoT Hub: ${err.toString()}`);
+			    }
+		    });
+	    }
+     }
 
     destroy() {
         console.log('iothub_writer.destroy');
